@@ -1,8 +1,8 @@
 # Constraints-Analysis
 
-**Last Updated: 09/03/2022**
+**Last Updated: 22/03/2022**
 
-<br>The files provided here are currently **draft** notebooks that are largely incomplete and missing text sections.
+<br>The files provided here are example notebooks exploring analysis of constraints in the NEM for various scenarios using additional functionality that has been adapted (forked) from the offical release of nempy, a NEM dispatch simulation tool.
 
 This repo will be continuously updated with more examples and improvements to the constraints implementation within the forked version of nempy.
 
