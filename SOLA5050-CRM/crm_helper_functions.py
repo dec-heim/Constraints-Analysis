@@ -1,4 +1,6 @@
-# helper functions
+# Title: Helper functions for the crm model
+# Author: Declan Heim 
+# Updated: 25/04/22
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -6,8 +8,7 @@ from nempy import markets, time_sequential
 from nempy.historical_inputs import loaders, mms_db, \
     xml_cache, units, demand, interconnectors, constraints
 import warnings
-    
-    
+      
 def perdelta(start_date, end_date, min_interval):
     """
     Function accessed by create_dispatch_list. Generates List of Datetimes between 2 dates.
@@ -33,22 +34,12 @@ def create_dispatch_list(start_date, end_date, min_interval=5):
         result = result + [datetime.strftime(n,'%Y/%m/%d %H:%M:%S')]
     return result
 
-def append_rp_unitinfo(unit_info, crm_provider):
-    # new_storage = pd.DataFrame([{'unit': bess_param['unit'],
-    #                            'region': bess_param['region'],
-    #                            'dispatch_type': bess_param['dispatch_type'],
-    #                             'loss_factor': bess_param['loss_factor']}])
-    # unit_info = pd.concat([unit_info,new_storage],ignore_index=True)
-    
+def append_rp_unitinfo(unit_info, crm_provider):   
     unit_info = pd.concat([unit_info,crm_provider.loc[:,['unit','region','dispatch_type','loss_factor']]]\
                                  ,ignore_index=True)
     return unit_info
 
-def append_rp_volumebids(volume_bids, crm_provider):
-    # new_storage = pd.DataFrame(data=[[bess_param['unit'],'energy'] + [0.0]*10], columns=volume_bids.columns)
-    # new_storage['1'] = bess_param['relief_MW']
-    # volume_bids = pd.concat([volume_bids,new_storage],ignore_index=True)
-    
+def append_rp_volumebids(volume_bids, crm_provider): 
     fill_zeros = pd.DataFrame([[0.0]*11])
     fill_zeros.columns = fill_zeros.columns.map(str)
     fill_zeros.drop(['0','1'],axis=1,inplace=True)
@@ -61,9 +52,6 @@ def append_rp_volumebids(volume_bids, crm_provider):
     return volume_bids
 
 def append_rp_pricebids(price_bids, crm_provider):
-    # new_storage = pd.DataFrame(data=[[bess_param['unit'],'energy'] + [bess_param['default_offer']]*10], columns=price_bids.columns)
-    # price_bids = pd.concat([price_bids,new_storage],ignore_index=True)
-
     fill_zeros = pd.DataFrame([[0.0]*11])
     fill_zeros.columns = fill_zeros.columns.map(str)
     fill_zeros.drop(['0','1'],axis=1,inplace=True)
@@ -76,22 +64,14 @@ def append_rp_pricebids(price_bids, crm_provider):
     return price_bids
 
 def append_rp_lhs(unit_generic_lhs, crm_provider):
-
     filt_constraint = unit_generic_lhs[unit_generic_lhs['set'] == crm_provider['set'].reset_index(drop=True)[0]]
     filt_mirror = filt_constraint[filt_constraint['unit'] == crm_provider['mirror_coeff'].reset_index(drop=True)[0]]
     
-    # new_storage = pd.DataFrame([{'set': bess_param['constraint'],
-    #                             'unit': bess_param['unit'],
-    #                             'service': 'energy',
-    #                             'coefficient': -1*filt_mirror['coefficient'].values[0]
-    #                            }])
-    # unit_generic_lhs = pd.concat([unit_generic_lhs,new_storage],ignore_index=True)
     df = crm_provider
     df.insert(1,'coefficient',-1*filt_mirror['coefficient'].values[0])
 
     unit_generic_lhs = pd.concat([unit_generic_lhs,df.loc[:,['set','unit','service','coefficient']]]\
                                  ,ignore_index=True) 
-    
     return unit_generic_lhs
 
 def append_rbuy_rhs(generic_rhs, crm_buyer_param):
@@ -117,23 +97,17 @@ def format_crm_buyers(df):
     df.insert(4,'coefficient', 1.0)
     return df
 
-
-
 def market_revenue(units, prices, dispatch):
 
     adjusted_prices = pd.merge(units,prices,how='inner', \
                                on='region')
-        
     adjusted_prices['mlf_price'] = adjusted_prices['price'] * adjusted_prices['loss_factor']
     
     energy_only = dispatch[dispatch['service'] == 'energy']
-    
     energy_revenue = pd.merge(adjusted_prices,energy_only, \
                               how='inner',left_on=['interval','unit'], \
                                   right_on=['interval','unit'])
-    
     energy_revenue['revenue'] = energy_revenue['mlf_price'] * energy_revenue['dispatch']*(1/12)
-       
     energy_revenue.loc[energy_revenue['dispatch_type'] == 'load','revenue'] \
         = energy_revenue['revenue'] * -1
         
@@ -145,14 +119,12 @@ def relief_revenue(units, prices, dispatch):
     signed_dispatch.loc[:,'dispatch'] = np.where(signed_dispatch['dispatch_type']=='load',\
                                                  -1*signed_dispatch['dispatch'],signed_dispatch['dispatch'])
     signed_dispatch['revenue'] = signed_dispatch['dispatch'] * prices['price'].values[0] * (1/12)
-    
     return signed_dispatch.loc[:,['unit','revenue']]
 
 def validate_spot_with_crm_error(interval, orig_market, new_market):
     const_df = new_market._constraints_rhs_and_type['generic']
     const_data = const_df[const_df['set'].str.contains('CRM_')]
     const_data = const_data[~const_data['set'].str.contains('STORAGE')]
-    print(const_data)
 
     dis_1 = orig_market.get_unit_dispatch()
     dis_1.insert(0,'interval',interval)
@@ -187,7 +159,7 @@ class relief_market:
         self._volume_bids = None
         self._price_bids = None
         self._cleared_energy_prc = energy_prc
-        
+ 
         self.config()
         
     def config(self):
@@ -274,7 +246,4 @@ class relief_market:
         prices = self._market.get_energy_prices()
         if trim_price:
             prices['price'] = self._cleared_energy_prc
-        
         return {'units': self._market._unit_info, 'prices': prices, 'dispatch': raw_dispatch}
-    
-    
