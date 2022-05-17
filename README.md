@@ -6,7 +6,7 @@
 
 A key case study here presents an assessment of the proposed Congestion Relief Market policy using these constraint tools. This project was completed in the context of university coursework (SOLA5050 Renewable Energy Policy) - hence a disclaimer here.. it is not advice and should not be interpreted in any other such context.   
 
-<br>Further files provided here are example notebooks exploring analysis of constraints and detailing methodology/comments within.
+Further files provided here are example notebooks exploring analysis of constraints and detailing methodology/comments within.
 
 This repo may be updated with more examples and improvements to the constraints implementation within the forked version of nempy.
 There are also aims to integrate this into the official release of nempy, once test have been validated etc.
